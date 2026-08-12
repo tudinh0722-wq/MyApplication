@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">My Application</string>
+    <string name="nav_today_title">Hôm nay</string>
+    <string name="nav_history_title">Lịch sử</string>
+    <string name="nav_tags_title">Tag</string>
+</resources>

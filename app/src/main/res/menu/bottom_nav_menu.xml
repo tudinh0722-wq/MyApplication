@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_today"
+        android:title="@string/nav_today_title" />
+    <item
+        android:id="@+id/nav_history"
+        android:title="@string/nav_history_title" />
+    <item
+        android:id="@+id/nav_tags"
+        android:title="@string/nav_tags_title" />
+</menu>

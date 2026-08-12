@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="work_color">#1976D2</color>
+    <color name="design_color">#7B1FA2</color>
+    <color name="cnc_color">#E65100</color>
+    <color name="label_gray">#757575</color>
+    <color name="divider">#E0E0E0</color>
+</resources>
