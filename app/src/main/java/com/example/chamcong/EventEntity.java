@@ -5,13 +5,13 @@ import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
 
 @Entity(
-        tableName = "events",
-        foreignKeys = @ForeignKey(
-                entity = TagEntity.class,
-                parentColumns = "id",
-                childColumns = "tagId",
-                onDelete = ForeignKey.RESTRICT
-        )
+    tableName = "events",
+    foreignKeys = @ForeignKey(
+        entity = TagEntity.class,
+        parentColumns = "id",
+        childColumns = "tagId",
+        onDelete = ForeignKey.RESTRICT
+    )
 )
 public class EventEntity {
     @PrimaryKey(autoGenerate = true)

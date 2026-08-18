@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="4dp">
+
+    <!-- Làn Xưởng (Ngoài cùng bên trái) -->
+    <View
+        android:id="@+id/view_lane_work"
+        android:layout_width="3dp"
+        android:layout_height="0dp"
+        android:background="@color/work_color"
+        android:alpha="0.2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginStart="8dp" />
+
+    <!-- Làn Thiết kế -->
+    <View
+        android:id="@+id/view_lane_design"
+        android:layout_width="3dp"
+        android:layout_height="0dp"
+        android:background="@color/design_color"
+        android:alpha="0.2"
+        app:layout_constraintStart_toEndOf="@id/view_lane_work"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginStart="4dp" />
+
+    <!-- Thời gian -->
+    <TextView
+        android:id="@+id/tv_event_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="08:03"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="?android:attr/textColorPrimary"
+        app:layout_constraintStart_toEndOf="@id/view_lane_design"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginStart="12dp" />
+
+    <!-- Tên sự kiện -->
+    <TextView
+        android:id="@+id/tv_event_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Bắt đầu thời gian làm việc"
+        android:textSize="14sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        app:layout_constraintStart_toEndOf="@id/tv_event_time"
+        app:layout_constraintEnd_toStartOf="@id/view_lane_cnc"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- Làn CNC (Bên phải cùng) -->
+    <View
+        android:id="@+id/view_lane_cnc"
+        android:layout_width="3dp"
+        android:layout_height="0dp"
+        android:background="@color/cnc_color"
+        android:alpha="0.2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginEnd="8dp" />
+
+    <!-- Các điểm mốc (Dots) -->
+    <View
+        android:id="@+id/dot_work"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/circle_dot"
+        android:backgroundTint="@color/work_color"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/view_lane_work"
+        app:layout_constraintEnd_toEndOf="@id/view_lane_work"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <View
+        android:id="@+id/dot_design"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/circle_dot"
+        android:backgroundTint="@color/design_color"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/view_lane_design"
+        app:layout_constraintEnd_toEndOf="@id/view_lane_design"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <View
+        android:id="@+id/dot_cnc"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/circle_dot"
+        android:backgroundTint="@color/cnc_color"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/view_lane_cnc"
+        app:layout_constraintEnd_toEndOf="@id/view_lane_cnc"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

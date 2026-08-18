@@ -2,13 +2,20 @@ package com.example.chamcong;
 
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
+import android.nfc.tech.Ndef;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -22,8 +29,15 @@ public class MainActivity extends AppCompatActivity {
 
     private NfcAdapter nfcAdapter;
     private PendingIntent pendingIntent;
-    private TodayFragment todayFragment;
+    private ViewPager2 viewPager;
+    private BottomNavigationView bottomNav;
+
+    private TodayFragment todayFragment = new TodayFragment();
+    private HistoryFragment historyFragment = new HistoryFragment();
+    private TagsFragment tagsFragment = new TagsFragment();
+
     private int updatingTagId = -1;
+    private boolean isWriteMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,57 +45,53 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-        if (nfcAdapter != null) {
-            pendingIntent = PendingIntent.getActivity(
-                    this, 0,
-                    new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
-                    PendingIntent.FLAG_MUTABLE
-            );
-        }
+        Intent intent = new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? PendingIntent.FLAG_MUTABLE : 0;
+        pendingIntent = PendingIntent.getActivity(this, 0, intent, flags);
 
-        // Setup fragments
-        todayFragment = new TodayFragment();
-        HistoryFragment historyFragment = new HistoryFragment();
-        TagsFragment tagsFragment = new TagsFragment();
+        viewPager = findViewById(R.id.view_pager);
+        bottomNav = findViewById(R.id.bottom_nav);
 
-        // Hiện tab Hôm nay mặc định
-        getSupportFragmentManager().beginTransaction()
-                .add(R.id.fragment_container, todayFragment, "today")
-                .add(R.id.fragment_container, historyFragment, "history")
-                .add(R.id.fragment_container, tagsFragment, "tags")
-                .hide(historyFragment)
-                .hide(tagsFragment)
-                .commit();
-
-        BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
-        bottomNav.setOnItemSelectedListener(item -> {
-            Fragment selected;
-            int id = item.getItemId();
-            if (id == R.id.nav_today) {
-                selected = todayFragment;
-            } else if (id == R.id.nav_history) {
-                selected = historyFragment;
-            } else {
-                selected = tagsFragment;
+        viewPager.setAdapter(new FragmentStateAdapter(this) {
+            @NonNull
+            @Override
+            public Fragment createFragment(int position) {
+                if (position == 0) return todayFragment;
+                if (position == 1) return historyFragment;
+                return tagsFragment;
             }
-            getSupportFragmentManager().beginTransaction()
-                    .hide(todayFragment)
-                    .hide(historyFragment)
-                    .hide(tagsFragment)
-                    .show(selected)
-                    .commit();
+
+            @Override
+            public int getItemCount() {
+                return 3;
+            }
+        });
+
+        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                if (position == 0) bottomNav.setSelectedItemId(R.id.nav_today);
+                else if (position == 1) bottomNav.setSelectedItemId(R.id.nav_history);
+                else bottomNav.setSelectedItemId(R.id.nav_tags);
+            }
+        });
+
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_today) viewPager.setCurrentItem(0);
+            else if (id == R.id.nav_history) viewPager.setCurrentItem(1);
+            else viewPager.setCurrentItem(2);
             return true;
         });
 
-        // Xử lý NFC ngay khi mở app bằng cách chạm thẻ (Cold Start)
-        if (getIntent() != null) {
-            handleNfcIntent(getIntent());
-        }
+        handleNfcIntent(getIntent());
     }
 
-    public void startTagUpdate(int id, String name) {
+    public void startTagUpdate(int id, String name, boolean writeMode) {
         this.updatingTagId = id;
-        Toast.makeText(this, "Quét thẻ mới cho: " + name, Toast.LENGTH_LONG).show();
+        this.isWriteMode = writeMode;
+        String msg = writeMode ? "Chạm thẻ để ĐĂNG KÝ (Ghi dữ liệu)..." : "Chạm thẻ để cập nhật UID...";
+        Toast.makeText(this, msg + "\n(" + name + ")", Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -103,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        setIntent(intent); // Quan trọng để các lần quét sau hoạt động đúng
+        setIntent(intent);
         handleNfcIntent(intent);
     }
 
@@ -111,92 +121,166 @@ public class MainActivity extends AppCompatActivity {
         Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
         if (tag == null) return;
 
-        String uidHex = bytesToHex(tag.getId());
+        if (isWriteMode && updatingTagId != -1) {
+            writeNdefUri(tag, "chamcong://checkin/" + updatingTagId);
+            return;
+        }
 
-        if (updatingTagId != -1) {
+        String uidHex = bytesToHex(tag.getId());
+        if (!isWriteMode && updatingTagId != -1) {
             handleTagUpdate(uidHex);
             return;
         }
 
-        handleEventScan(uidHex);
+        if (intent.getData() != null && "chamcong".equals(intent.getData().getScheme())) {
+            try {
+                int tagId = Integer.parseInt(intent.getData().getLastPathSegment());
+                handleEventScanById(tagId);
+                return;
+            } catch (Exception ignored) {}
+        }
+
+        handleEventScanByUid(uidHex);
+    }
+
+    private void writeNdefUri(Tag tag, String uri) {
+        Ndef ndef = Ndef.get(tag);
+        if (ndef == null) {
+            Toast.makeText(this, "Thẻ không hỗ trợ định dạng NDEF!", Toast.LENGTH_SHORT).show();
+            isWriteMode = false;
+            updatingTagId = -1;
+            return;
+        }
+
+        try {
+            NdefRecord record = NdefRecord.createUri(uri);
+            NdefMessage message = new NdefMessage(new NdefRecord[]{record});
+            ndef.connect();
+            ndef.writeNdefMessage(message);
+            ndef.close();
+
+            handleTagUpdate(bytesToHex(tag.getId()));
+            Toast.makeText(this, "Đã ghi định danh và Đăng ký thẻ thành công!", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Lỗi khi ghi thẻ: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        } finally {
+            isWriteMode = false;
+            updatingTagId = -1;
+        }
     }
 
     private void handleTagUpdate(String newUid) {
         int id = updatingTagId;
-        updatingTagId = -1; // Reset mode
+        updatingTagId = -1;
+        isWriteMode = false;
 
         Executors.newSingleThreadExecutor().execute(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
-            List<TagEntity> all = db.tagDao().getAll();
-            TagEntity target = null;
-            for (TagEntity t : all) {
+            TagEntity tag = null;
+            for (TagEntity t : db.tagDao().getAll()) {
                 if (t.id == id) {
-                    target = t;
+                    tag = t;
                     break;
                 }
             }
-
-            if (target != null) {
-                target.uid = newUid;
-                db.tagDao().update(target);
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "Đã cập nhật thẻ mới: " + newUid, Toast.LENGTH_SHORT).show();
-                });
+            if (tag != null) {
+                tag.uid = newUid;
+                db.tagDao().update(tag);
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Đã cập nhật UID: " + newUid, Toast.LENGTH_SHORT).show());
             }
         });
     }
 
-    private void handleEventScan(String uidHex) {
-        long now = System.currentTimeMillis();
+    private void handleEventScanByUid(String uidHex) {
         Executors.newSingleThreadExecutor().execute(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
             TagEntity tagEntity = db.tagDao().findByUid(uidHex);
+            if (tagEntity != null) {
+                checkAndProcessEvent(tagEntity);
+            } else {
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Thẻ chưa đăng ký: " + uidHex, Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
 
-            runOnUiThread(() -> {
-                if (tagEntity == null) {
-                    Toast.makeText(this, "Tag lạ: " + uidHex, Toast.LENGTH_SHORT).show();
-                    return;
+    private void handleEventScanById(int tagId) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            TagEntity tag = null;
+            for (TagEntity t : db.tagDao().getAll()) {
+                if (t.id == tagId) {
+                    tag = t;
+                    break;
                 }
+            }
+            if (tag != null) {
+                checkAndProcessEvent(tag);
+            }
+        });
+    }
 
-                EventEntity event = new EventEntity();
-                event.tagId = tagEntity.id;
-                event.eventType = tagEntity.eventType;
-                event.timestamp = now;
+    private void checkAndProcessEvent(TagEntity tag) {
+        AppDatabase db = AppDatabase.getInstance(this);
+        String eType = tag.eventType != null ? tag.eventType : "";
+        String baseType = eType.split("_")[0];
+        EventEntity lastEvent = db.eventDao().getLastEventByType(baseType);
 
-                Executors.newSingleThreadExecutor().execute(() -> {
-                    db.eventDao().insert(event);
-                    runOnUiThread(() -> {
-                        if (todayFragment != null) todayFragment.refresh();
-                    });
-                });
+        boolean isStart = eType.endsWith("_START");
+        boolean isEnd = eType.endsWith("_END");
 
-                String timeStr = new SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-                        .format(new Date(now));
-                Toast.makeText(this,
-                        "✓ " + eventTypeToLabel(tagEntity.eventType) + " " + timeStr,
-                        Toast.LENGTH_SHORT).show();
-            });
+        String errorMsg = null;
+        if (lastEvent != null) {
+            boolean lastIsStart = lastEvent.eventType != null && lastEvent.eventType.endsWith("_START");
+            if (isStart && lastIsStart) {
+                errorMsg = "Đang ở trạng thái BẮT ĐẦU. Vui lòng kết thúc trước.";
+            } else if (isEnd && !lastIsStart) {
+                errorMsg = "Chưa có sự kiện BẮT ĐẦU tương ứng.";
+            }
+        } else if (isEnd) {
+            errorMsg = "Chưa có dữ liệu BẮT ĐẦU trước đó.";
+        }
+
+        if (errorMsg != null) {
+            final String msg = errorMsg;
+            runOnUiThread(() -> Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show());
+            return;
+        }
+
+        processEvent(tag);
+    }
+
+    private void processEvent(TagEntity tag) {
+        long now = System.currentTimeMillis();
+        EventEntity event = new EventEntity();
+        event.tagId = tag.id;
+        event.eventType = tag.eventType;
+        event.timestamp = now;
+
+        AppDatabase db = AppDatabase.getInstance(this);
+        db.eventDao().insert(event);
+
+        runOnUiThread(() -> {
+            todayFragment.refresh();
+            historyFragment.refresh();
+            String timeStr = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date(now));
+            Toast.makeText(MainActivity.this, "✓ " + eventTypeToLabel(tag.eventType) + " " + timeStr, Toast.LENGTH_SHORT).show();
         });
     }
 
     private String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02X:", b));
-        }
+        for (byte b : bytes) sb.append(String.format("%02X:", b));
         if (sb.length() > 0) sb.deleteCharAt(sb.length() - 1);
         return sb.toString();
     }
 
     private String eventTypeToLabel(String eventType) {
-        switch (eventType) {
-            case "WORK_START":   return "Vào xưởng";
-            case "WORK_END":     return "Ra xưởng";
-            case "DESIGN_START": return "Bắt đầu thiết kế";
-            case "DESIGN_END":   return "Kết thúc thiết kế";
-            case "CNC_START":    return "CNC bắt đầu";
-            case "CNC_END":      return "CNC kết thúc";
-            default:             return eventType;
-        }
+        if ("WORK_START".equals(eventType)) return "Bắt đầu thời gian làm việc";
+        if ("WORK_END".equals(eventType)) return "Kết thúc thời gian làm việc";
+        if ("DESIGN_START".equals(eventType)) return "Bắt đầu thiết kế";
+        if ("DESIGN_END".equals(eventType)) return "Kết thúc thiết kế";
+        if ("CNC_START".equals(eventType)) return "CNC bắt đầu";
+        if ("CNC_END".equals(eventType)) return "CNC kết thúc";
+        return eventType;
     }
 }

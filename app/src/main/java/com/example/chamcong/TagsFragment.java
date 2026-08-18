@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -22,7 +23,7 @@ public class TagsFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        android.widget.ScrollView scrollView = new android.widget.ScrollView(getContext());
+        ScrollView scrollView = new ScrollView(getContext());
         this.container = new LinearLayout(getContext());
         this.container.setOrientation(LinearLayout.VERTICAL);
         this.container.setPadding(40, 40, 40, 40);
@@ -38,20 +39,19 @@ public class TagsFragment extends Fragment {
 
     private void loadTags() {
         Executors.newSingleThreadExecutor().execute(() -> {
-            AppDatabase db = AppDatabase.getInstance(getContext());
+            AppDatabase db = AppDatabase.getInstance(requireContext());
             List<TagEntity> tags = db.tagDao().getAll();
-
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
-                    container.removeAllViews();
-                    TextView title = new TextView(getContext());
-                    title.setText("DANH SÁCH THẺ\n");
-                    title.setTextSize(18);
-                    title.setTextColor(android.graphics.Color.BLACK);
-                    container.addView(title);
+                    if (container != null) {
+                        container.removeAllViews();
+                        TextView title = new TextView(getContext());
+                        title.setText("DANH SÁCH THẺ\n");
+                        title.setTextSize(18f);
+                        title.setPadding(0, 0, 0, 20);
+                        container.addView(title);
 
-                    for (TagEntity t : tags) {
-                        addTagView(t);
+                        for (TagEntity t : tags) addTagView(t);
                     }
                 });
             }
@@ -65,18 +65,32 @@ public class TagsFragment extends Fragment {
 
         TextView info = new TextView(getContext());
         info.setText("TAG-00" + t.id + ": " + t.name + "\nUID: " + t.uid + "\nLoại: " + t.eventType);
-        info.setTextSize(14);
+        info.setTextSize(14f);
         row.addView(info);
 
-        Button btnReplace = new Button(getContext());
-        btnReplace.setText("Thay thẻ mới");
-        btnReplace.setOnClickListener(v -> {
+        LinearLayout buttons = new LinearLayout(getContext());
+        buttons.setOrientation(LinearLayout.HORIZONTAL);
+        buttons.setPadding(0, 10, 0, 0);
+
+        Button btnRegister = new Button(getContext());
+        btnRegister.setText("Đăng ký (Ghi thẻ)");
+        btnRegister.setOnClickListener(v -> {
             if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).startTagUpdate(t.id, t.name);
+                ((MainActivity) getActivity()).startTagUpdate(t.id, t.name, true);
             }
         });
-        row.addView(btnReplace);
+        buttons.addView(btnRegister);
 
+        Button btnUidOnly = new Button(getContext());
+        btnUidOnly.setText("Chỉ thay UID");
+        btnUidOnly.setOnClickListener(v -> {
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).startTagUpdate(t.id, t.name, false);
+            }
+        });
+        buttons.addView(btnUidOnly);
+
+        row.addView(buttons);
         container.addView(row);
     }
 }
