@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../data/repository.dart';
-import '../domain/day_logic.dart';
+import '../domain/day_logic.dart';\nimport '../domain/day_controller.dart';
 import '../domain/trigger.dart';
 import '../util/time_utils.dart';
 
 class HistoryPage extends StatefulWidget {
-  const HistoryPage({super.key, required this.repository});
+  const HistoryPage({super.key, required this.repository, required this.controller});
 
-  final Repository repository;
+  final Repository repository;\n  final DayController controller;
 
   @override
   State<HistoryPage> createState() => _HistoryPageState();
@@ -57,7 +57,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Future<void> _edit(TriggerEvent? event) async {
     var trigger = event?.trigger ?? Trigger.workStart;
-    var time = event?.time ?? DateTime.now();
+    var time = event?.time ?? DateTime(_day.year, _day.month, _day.day, DateTime.now().hour, DateTime.now().minute);
     final result = await showDialog<_EventEdit>(
       context: context,
       builder: (context) => StatefulBuilder(builder: (context, setDialogState) {
