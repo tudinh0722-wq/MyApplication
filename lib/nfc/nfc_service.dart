@@ -1,4 +1,5 @@
 import 'package:nfc_manager/nfc_manager.dart';
+import 'package:nfc_manager/platform_tags.dart';
 
 /// Chuyển bytes UID sang chuỗi hex dạng 53:27:B3:B1:02:00:01.
 String uidToHex(List<int> bytes) => bytes
