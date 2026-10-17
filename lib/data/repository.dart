@@ -99,7 +99,11 @@ class Repository {
     await _db.update('tag', {'uid': null}, where: 'id = ?', whereArgs: [tagId]);
   }
 
-  Future<void> renameTag(String tagId, String name) async {\n    await _db.update('tag', {'name': name}, where: 'id = ?', whereArgs: [tagId]);\n  }\n\n  Future<void> setTagActive(String tagId, bool active) async {
+  Future<void> renameTag(String tagId, String name) async {
+    await _db.update('tag', {'name': name}, where: 'id = ?', whereArgs: [tagId]);
+  }
+
+  Future<void> setTagActive(String tagId, bool active) async {
     await _db.update('tag', {'active': active ? 1 : 0},
         where: 'id = ?', whereArgs: [tagId]);
   }
