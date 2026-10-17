@@ -28,7 +28,7 @@ class TimelinePainter extends CustomPainter {
     final span = const Duration(hours: endHour - startHour).inSeconds;
 
     double x(DateTime t) {
-      final s = t.difference(t0).inSeconds.clamp(0, span);
+      final s = t.difference(t0).inSeconds.clamp(0, span).toDouble();
       return left + w * s / span;
     }
 
