@@ -123,7 +123,7 @@ class _TagsPageState extends State<TagsPage> {
           Card(
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: tag.trigger.process.color.withOpacity(0.15),
+                backgroundColor: tag.trigger.process.color.withValues(alpha: 0.15),
                 child: Icon(Icons.nfc, color: tag.trigger.process.color),
               ),
               title: Text(tag.name),
