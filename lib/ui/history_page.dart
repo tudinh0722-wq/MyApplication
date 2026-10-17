@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../data/repository.dart';
-import '../domain/day_logic.dart';
 import '../domain/day_controller.dart';
+import '../domain/day_logic.dart';
 import '../domain/trigger.dart';
 import '../util/time_utils.dart';
 
@@ -28,12 +28,14 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
     setState(() => _loading = true);
     try {
       final events = await widget.repository.eventsBetween(_day, nextDay(_day));
       if (mounted) setState(() { _events = events; _loading = false; });
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() => _loading = false);
       _message('Không đọc được lịch sử: $e', error: true);
     }
   }
@@ -52,7 +54,7 @@ class _HistoryPageState extends State<HistoryPage> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 1)),
     );
-    if (chosen == null) return;
+    if (chosen == null || !mounted) return;
     setState(() => _day = startOfDay(chosen));
     await _load();
   }
@@ -106,16 +108,17 @@ class _HistoryPageState extends State<HistoryPage> {
         );
       }),
     );
-    if (result == null) return;
+    if (result == null || !mounted) return;
     try {
       if (event == null) {
         await widget.repository.insertEvent(result.trigger, result.time);
       } else {
         await widget.repository.updateEvent(event.id, result.trigger, result.time);
       }
-      await _load();
       await widget.controller.load();
-      _message('Đã lưu sự kiện.');
+      if (!mounted) return;
+      await _load();
+      if (mounted) _message('Đã lưu sự kiện.');
     } catch (e) {
       _message('Không lưu được sự kiện: $e', error: true);
     }
@@ -133,10 +136,11 @@ class _HistoryPageState extends State<HistoryPage> {
         ],
       ),
     );
-    if (ok != true) return;
+    if (ok != true || !mounted) return;
     await widget.repository.deleteEvent(event.id);
-    await _load();
     await widget.controller.load();
+    if (!mounted) return;
+    await _load();
   }
 
   @override
