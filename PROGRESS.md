@@ -1,22 +1,24 @@
 # Tiến độ
 
-Chú thích: ✅ đã viết xong và đẩy lên repo · ⬜ chưa làm · 🧪 cần bạn chạy thử trên máy.
-**Toàn bộ mã được viết mà chưa compile hay chạy thử** (môi trường viết không có Flutter). Mỗi bước bên dưới cần `flutter analyze` và chạy thật để xác nhận.
+Chú thích: ✅ đã viết và đẩy lên nhánh `flutter-testable` · 🧪 cần chạy thử trên máy thật · ⬜ chưa hoàn tất.
+**Chưa có build/test thực tế trong môi trường viết** (không có Flutter SDK và không thể clone repo về môi trường này). Trạng thái “đã viết” không đồng nghĩa với “đã compile thành công”.
 
-| # | Bước | Trạng thái | Kiểm chứng |
+| # | Bước | Trạng thái mã | Kiểm chứng còn lại |
 |---|---|---|---|
-| M0 | Thiết lập: pubspec, README, PROJECT, script manifest | ✅ | 🧪 `flutter create` + `flutter pub get` |
-| M1 | Domain: trigger, luật 3 tiến trình, kiểm tra, tổng hợp, test | ✅ | 🧪 `flutter test` |
-| M2 | Data: sqflite, 2 bảng, nạp 7 thẻ, chịu lỗi database | ✅ | 🧪 |
-| M3 | Home: controller, timeline, 7 nút, lịch sử trong ngày | ✅ | 🧪 |
-| M4 | NFC: đọc UID, xử lý thẻ quét, main, điều hướng | ⬜ | 🧪 trên S23 |
-| M5 | Lịch sử: theo ngày, sửa/thêm/xóa, cảnh báo quên kết thúc | ⬜ | 🧪 |
-| M6 | Thẻ: gán UID bằng cách quét, bật/tắt | ⬜ | 🧪 trên S23 |
-| M7 | Chạy thử thật cả luồng, sửa lỗi phát sinh | ⬜ | bạn làm |
+| M0 | Thiết lập Flutter, pubspec, README, Android host | ✅ | 🧪 `flutter pub get`, Gradle sync |
+| M1 | Domain: trigger, luật 3 tiến trình, tổng hợp, test | ✅ | 🧪 `flutter test` |
+| M2 | SQLite, schema, 7 tag mặc định, repository | ✅ | 🧪 kiểm tra database trên Android |
+| M3 | Home, timeline, 7 nút, lịch sử trong ngày | ✅ | 🧪 bấm nút và khởi động lại app |
+| M4 | Entry point, điều hướng, xử lý UID NFC | ✅ | 🧪 NFC trên điện thoại thật |
+| M5 | Lịch sử theo ngày, thêm/sửa/xóa, tổng kết, cảnh báo | ✅ | 🧪 kiểm tra sửa sự kiện hôm nay và ngày cũ |
+| M6 | Quản lý tag, gán/gỡ UID, bật/tắt, đổi tên | ✅ | 🧪 thử với các thẻ NFC thật |
+| M7 | Build, chạy thử toàn luồng và sửa lỗi phát sinh | ⬜ | Chờ kết quả test trên máy |
 
 ## Nhật ký
 
-- **2026-10-17 · M0**: thêm `pubspec.yaml` (sqflite, nfc_manager 3.x, dynamic_color), `.gitignore` Flutter, `analysis_options.yaml`, `README.md` (cài đặt, dọn file cũ), `PROJECT.md`, `tools/patch_android_manifest.ps1`. Chọn applicationId mới `com.tudinh.chamcong_v2` và database `chamcong_v2.db` để không đụng dữ liệu app cũ.
-- **2026-10-17 · M1**: thêm `util/time_utils.dart`, `domain/trigger.dart` (3 tiến trình, 7 trigger, `Interval` có cờ `broken`), `domain/tag_info.dart`, `domain/day_logic.dart` (`buildIntervals`, `validate`, `summarize`, `findIssues`), `test/day_logic_test.dart` (13 ca). Quy tắc đã mã hóa: bắt đầu khi đang chạy bị chặn, kết thúc khi chưa bắt đầu bị chặn (trừ xác nhận CNC), ngày cũ chưa kết thúc tính 0 và cảnh báo.
-- **2026-10-17 · M2**: thêm `data/app_database.dart` (file `chamcong_v2.db`, bảng `tag` và `event`, chỉ mục UID duy nhất, nạp 7 thẻ chưa có UID, nếu mở lỗi thì đổi tên file thành `.broken-*` rồi tạo mới, không xóa) và `data/repository.dart` (đọc/ghi sự kiện theo khoảng ngày, gán UID cho thẻ trong transaction).
-- **2026-10-17 · M3**: thêm `domain/day_controller.dart` (`press()` kiểm tra, ghi DB, xếp hàng các lần bấm để không vượt kiểm tra cùng lúc, tự nạp lại khi sang ngày mới), `ui/timeline_painter.dart` (3 thanh song song, vạch "bây giờ"), `ui/home_page.dart` (3 block: timeline, 7 nút, lịch sử có giây; phản hồi qua `onMessage`). Home chưa có `Scaffold`, sẽ được bọc ở `main.dart` (M4).
+- **2026-10-17 · M0–M3**: domain, data, controller, Home và timeline đã có từ trước.
+- **2026-10-17 · M4**: thêm `lib/main.dart`, `lib/app_services.dart`, điều hướng 3 tab và luồng quét UID → tag → trigger. Có chống xử lý lặp cùng UID trong 2 giây.
+- **2026-10-17 · M5**: thêm lịch sử theo ngày, tổng thời gian, cảnh báo sự kiện bất thường và thao tác thêm/sửa/xóa. Sau khi sửa lịch sử, Home được nạp lại để phản ánh dữ liệu mới.
+- **2026-10-17 · M6**: thêm quản lý 7 tag: gán UID bằng quét NFC, gỡ UID, bật/tắt và đổi tên.
+- **2026-10-17 · Android host**: thêm `android/` Gradle project, Manifest NFC, `MainActivity` và wrapper để có thể mở thư mục gốc bằng Flutter tooling. Cần xác minh Gradle/AGP trên máy có Flutter SDK.
+- **Còn cần làm sau vòng test đầu**: sửa các lỗi analyzer/build phát sinh, kiểm tra trạng thái NFC khi app quay lại foreground, và xác minh luật nghiệp vụ với dữ liệu thực tế.
