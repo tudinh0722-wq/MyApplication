@@ -1,55 +1,49 @@
 # Chấm công NFC (chamcong_v2)
 
-Ứng dụng Flutter **offline hoàn toàn** cho xưởng CNC: ghi mốc thời gian 3 tiến trình độc lập (làm việc, thiết kế, máy CNC) bằng nút bấm hoặc thẻ NFC NTAG213. Không tính tiền, chỉ tổng hợp thời gian để nhập lên hệ thống xưởng.
+Ứng dụng Flutter offline cho xưởng CNC: ghi mốc thời gian của 3 tiến trình độc lập (làm việc, thiết kế, máy CNC) bằng nút bấm hoặc thẻ NFC. Không tính tiền; chỉ tổng hợp thời gian để nhập lên hệ thống xưởng.
 
-- Cấu trúc & luật: [PROJECT.md](PROJECT.md)
-- Tiến độ từng bước: [PROGRESS.md](PROGRESS.md)
+- Cấu trúc & quy tắc: [PROJECT.md](PROJECT.md)
+- Tiến độ và phần cần kiểm thử: [PROGRESS.md](PROGRESS.md)
 
-## Dự án mới, tách biệt app cũ
+## Mở và chạy thử trên Windows
 
-Để máy đã từng cài bản cũ không bị lỗi database khi cài bản này:
-
-| Thứ | App cũ | Bản này |
-|---|---|---|
-| applicationId | `com.example.chamcong` | `com.tudinh.chamcong_v2` |
-| File database | (Room cũ) | `chamcong_v2.db` |
-| Android Auto Backup | bật | **tắt** (script ở `tools/`) |
-
-Hai app cài song song được, không đụng dữ liệu của nhau. Database hỏng hoặc sai schema sẽ được **đổi tên thành `.broken-*` rồi tạo mới**, không bao giờ xóa.
-
-## Cài đặt lần đầu (Windows, PowerShell)
-
-Repo này chỉ chứa `lib/`, `pubspec.yaml`, `test/` và công cụ. Thư mục `android/` do Flutter tạo ra.
+Cài Flutter SDK, Android Studio, Android SDK và bật Flutter/Dart plugins trong Android Studio. Mở terminal trong Android Studio hoặc PowerShell.
 
 ```powershell
-git clone https://github.com/tudinh0722-wq/MyApplication.git
+git clone --branch flutter-testable https://github.com/tudinh0722-wq/MyApplication.git
 cd MyApplication
 
-# 1. Dọn file Android native cũ (vẫn còn trong lịch sử git)
-git rm -r --ignore-unmatch app gradle .idea gradlew gradlew.bat build.gradle.kts settings.gradle.kts gradle.properties
-git commit -m "Dọn project Android native cũ"
-
-# 2. Sinh phần Android của Flutter với applicationId mới
-flutter create --org com.tudinh --project-name chamcong_v2 --platforms android .
-
-# 3. Xóa test mẫu (tham chiếu MyApp không còn)
-Remove-Item test\widget_test.dart -ErrorAction SilentlyContinue
-
-# 4. Thêm quyền NFC, tắt Auto Backup
-powershell -ExecutionPolicy Bypass -File tools\patch_android_manifest.ps1
-
-# 5. Chạy
+flutter doctor
 flutter pub get
 flutter analyze
 flutter test
 flutter run
 ```
 
-Nếu `flutter run` báo lỗi `Namespace not specified` ở `nfc_manager`, báo lại để đổi phiên bản gói.
+Trong Android Studio, chọn **Open** và mở thư mục gốc `MyApplication` (thư mục có `pubspec.yaml`), không mở thư mục `app/` cũ. Chạy `flutter pub get` lần đầu để Flutter tạo `android/local.properties` trỏ tới Flutter SDK. Kết nối điện thoại Android, bật Developer options/USB debugging rồi chọn thiết bị trong thanh chạy.
 
-## Quy tắc dùng
+Để tạo APK debug:
 
-- Mỗi lần bắt đầu một tiến trình phải kết thúc lần trước (trừ lần đầu trong ngày).
-- Trigger 6 (kết thúc CNC tại máy) và 7 (xác nhận tại bàn) đều kết thúc tiến trình CNC.
-- Mọi sửa, thêm, xóa sự kiện và xử lý quên kết thúc làm ở màn **Lịch sử**.
-- UID thẻ NFC **không lưu trong mã nguồn**: gán ở màn **Thẻ** bằng cách chạm thẻ.
+```powershell
+flutter build apk --debug
+```
+
+APK nằm tại `build\app\outputs\flutter-apk\app-debug.apk`.
+
+## Hành vi cần biết khi test
+
+- Application ID mới: `com.tudinh.chamcong_v2`; database riêng: `chamcong_v2.db`, không dùng database Room của app cũ.
+- Android Auto Backup bị tắt để tránh khôi phục database cũ sai schema.
+- Database hỏng/sai schema sẽ được đổi tên thành `.broken-*` rồi tạo mới; app không chủ động xóa database đó.
+- 7 tag được tạo sẵn nhưng chưa gán UID. Vào tab **Thẻ NFC**, chọn **Quét để gán** rồi chạm thẻ.
+- NFC chỉ đọc khi app đang mở. UID chưa gán hoặc tag đang tắt sẽ không tạo sự kiện.
+- Trigger 6 (kết thúc CNC tại máy) và Trigger 7 (xác nhận xong CNC tại bàn) đều kết thúc tiến trình CNC.
+- Các tiến trình độc lập, nên bắt đầu/kết thúc một tiến trình không tự đóng tiến trình khác.
+
+## Nếu build lỗi
+
+Gửi lại toàn bộ output của `flutter doctor -v`, `flutter analyze`, và lệnh build bị lỗi. Đặc biệt, nếu Gradle báo không tương thích giữa Flutter và Android Gradle Plugin, đừng tự nâng phiên bản hàng loạt trước khi xem log.
+
+## Ghi chú cấu trúc repo
+
+Repo còn giữ một số file Android native cũ ở thư mục gốc để không xóa lịch sử hiện có. Dự án Flutter mới nằm ở `lib/`, `pubspec.yaml` và `android/`. Trong Android Studio, luôn mở thư mục gốc để Flutter plugin nhận đúng dự án.
