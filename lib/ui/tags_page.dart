@@ -68,9 +68,27 @@ class _TagsPageState extends State<TagsPage> {
     );
     controller.dispose();
     if (name == null || name.isEmpty) return;
-    // Tên chỉ là nhãn hiển thị; trigger/UID vẫn được giữ nguyên.
     await widget.services.repository.renameTag(tag.id, name);
     await _load();
+  }
+
+  Future<void> _selectAction(TagInfo tag, String value) async {
+    final services = widget.services;
+    try {
+      if (value == 'assign') {
+        services.beginAssignTag(tag.id);
+      } else if (value == 'clear') {
+        await services.repository.clearTagUid(tag.id);
+        await _load();
+      } else if (value == 'toggle') {
+        await services.repository.setTagActive(tag.id, !tag.active);
+        await _load();
+      } else if (value == 'rename') {
+        await _rename(tag);
+      }
+    } catch (e) {
+      services.onMessage?.call('Không cập nhật được thẻ: $e', error: true);
+    }
   }
 
   @override
@@ -93,7 +111,7 @@ class _TagsPageState extends State<TagsPage> {
                 const SizedBox(height: 6),
                 Text('Đang chờ thẻ cho ${services.assigningTagId}…'),
                 Align(alignment: Alignment.centerRight, child: TextButton(
-                  onPressed: () { services.cancelAssignTag(); },
+                  onPressed: services.cancelAssignTag,
                   child: const Text('Hủy quét'),
                 )),
               ],
@@ -105,51 +123,19 @@ class _TagsPageState extends State<TagsPage> {
           Card(
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: tag.trigger.process.color.withValues(alpha: 0.15),
+                backgroundColor: tag.trigger.process.color.withOpacity(0.15),
                 child: Icon(Icons.nfc, color: tag.trigger.process.color),
               ),
               title: Text(tag.name),
               subtitle: Text('${tag.id} · ${tag.trigger.label}\nUID: ${tag.uid ?? 'chưa gán'}',
                   maxLines: 2, overflow: TextOverflow.ellipsis),
               isThreeLine: true,
-              trailing: PopupMenuButton<String>(
-                onSelected: (value) async {
-                  if (value == 'assign') {
-                    services.beginAssignTag(tag.id);
-                  } else if (value == 'clear') {
-                    await services.repository.clearTagUid(tag.id);
-                    await _load();
-                  } else if (value == 'toggle') {
-                    await services.repository.setTagActive(tag.id, !tag.active);
-                    await _load();
-                  } else if (value == 'rename') {
-                    await _rename(tag);
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'assign', child: Text('Quét để gán UID')),
-                  if (tag.uid != null) const PopupMenuItem(value: 'clear', child: Text('Gỡ UID')),
-                  PopupMenuItem(value: 'toggle', child: Text(tag.active ? 'Tắt thẻ' : 'Bật thẻ')),
-                  const PopupMenuItem(value: 'rename', child: Text('Đổi tên')),
-                ],
-              ),
               onTap: () => services.beginAssignTag(tag.id),
               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(tag.active ? Icons.check_circle : Icons.pause_circle, color: tag.active ? Colors.green : Theme.of(context).colorScheme.outline),
+                Icon(tag.active ? Icons.check_circle : Icons.pause_circle,
+                    color: tag.active ? Colors.green : Theme.of(context).colorScheme.outline),
                 PopupMenuButton<String>(
-                  onSelected: (value) async {
-                    if (value == 'assign') {
-                      services.beginAssignTag(tag.id);
-                    } else if (value == 'clear') {
-                      await services.repository.clearTagUid(tag.id);
-                      await _load();
-                    } else if (value == 'toggle') {
-                      await services.repository.setTagActive(tag.id, !tag.active);
-                      await _load();
-                    } else if (value == 'rename') {
-                      await _rename(tag);
-                    }
-                  },
+                  onSelected: (value) => _selectAction(tag, value),
                   itemBuilder: (context) => [
                     const PopupMenuItem(value: 'assign', child: Text('Quét để gán UID')),
                     if (tag.uid != null) const PopupMenuItem(value: 'clear', child: Text('Gỡ UID')),
