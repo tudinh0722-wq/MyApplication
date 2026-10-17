@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../data/repository.dart';
-import '../domain/day_logic.dart';\nimport '../domain/day_controller.dart';
+import '../domain/day_logic.dart';
+import '../domain/day_controller.dart';
 import '../domain/trigger.dart';
 import '../util/time_utils.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key, required this.repository, required this.controller});
 
-  final Repository repository;\n  final DayController controller;
+  final Repository repository;
+  final DayController controller;
 
   @override
   State<HistoryPage> createState() => _HistoryPageState();
@@ -79,7 +81,8 @@ class _HistoryPageState extends State<HistoryPage> {
               trailing: const Icon(Icons.calendar_month),
               onTap: () async {
                 final d = await showDatePicker(context: context, initialDate: time, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 1)));
-                if (d != null) {\n                  setDialogState(() => time = DateTime(d.year, d.month, d.day, time.hour, time.minute, time.second));\n                }
+                if (d != null) {\n                  setDialogState(() => time = DateTime(d.year, d.month, d.day, time.hour, time.minute, time.second));
+                }
               },
             ),
             ListTile(
@@ -89,7 +92,8 @@ class _HistoryPageState extends State<HistoryPage> {
               trailing: const Icon(Icons.schedule),
               onTap: () async {
                 final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(time));
-                if (t != null) {\n                  setDialogState(() => time = DateTime(time.year, time.month, time.day, t.hour, t.minute, 0));\n                }
+                if (t != null) {\n                  setDialogState(() => time = DateTime(time.year, time.month, time.day, t.hour, t.minute, 0));
+                }
               },
             ),
           ]),
