@@ -105,7 +105,7 @@ class _MainShellState extends State<MainShell> {
         onMessage: (text, {error = false}) =>
             services.onMessage?.call(text, error: error),
       ),
-      HistoryPage(repository: services.repository),
+      HistoryPage(repository: services.repository, controller: services.dayController),
       TagsPage(services: services),
     ];
     return Scaffold(
