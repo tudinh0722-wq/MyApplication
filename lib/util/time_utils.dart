@@ -1,4 +1,4 @@
-/// Hàm định dạng và mốc thời gian dùng chung.
+// Hàm định dạng và mốc thời gian dùng chung.
 
 String two(int n) => n.toString().padLeft(2, '0');
 
