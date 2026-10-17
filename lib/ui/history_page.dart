@@ -81,7 +81,8 @@ class _HistoryPageState extends State<HistoryPage> {
               trailing: const Icon(Icons.calendar_month),
               onTap: () async {
                 final d = await showDatePicker(context: context, initialDate: time, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 1)));
-                if (d != null) {\n                  setDialogState(() => time = DateTime(d.year, d.month, d.day, time.hour, time.minute, time.second));
+                if (d != null) {
+                  setDialogState(() => time = DateTime(d.year, d.month, d.day, time.hour, time.minute, time.second));
                 }
               },
             ),
@@ -92,7 +93,8 @@ class _HistoryPageState extends State<HistoryPage> {
               trailing: const Icon(Icons.schedule),
               onTap: () async {
                 final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(time));
-                if (t != null) {\n                  setDialogState(() => time = DateTime(time.year, time.month, time.day, t.hour, t.minute, 0));
+                if (t != null) {
+                  setDialogState(() => time = DateTime(time.year, time.month, time.day, t.hour, t.minute, 0));
                 }
               },
             ),
