@@ -114,6 +114,7 @@ class _HistoryPageState extends State<HistoryPage> {
         await widget.repository.updateEvent(event.id, result.trigger, result.time);
       }
       await _load();
+      await widget.controller.load();
       _message('Đã lưu sự kiện.');
     } catch (e) {
       _message('Không lưu được sự kiện: $e', error: true);
@@ -135,6 +136,7 @@ class _HistoryPageState extends State<HistoryPage> {
     if (ok != true) return;
     await widget.repository.deleteEvent(event.id);
     await _load();
+    await widget.controller.load();
   }
 
   @override
